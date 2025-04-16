@@ -1,6 +1,6 @@
 'use client';
 
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 import {
   Sidebar,
   SidebarContent,
@@ -10,10 +10,9 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarProvider,
-  SidebarTrigger,
   SidebarInput,
   useSidebar,
+  SidebarTrigger, // Import SidebarTrigger
 } from '@/components/ui/sidebar';
 import {Card, CardContent} from '@/components/ui/card';
 import {Button} from '@/components/ui/button';
@@ -66,11 +65,6 @@ export default function Home() {
     if (selectedConversation) {
       localStorage.setItem(selectedConversation, JSON.stringify(messages));
       updateSummary(messages);
-      if (messages.length > 0) {
-        // Use first message for updated conversation history name
-        const firstMessage = messages[0].text;
-        updateConversationName(firstMessage);
-      }
     }
   }, [messages, selectedConversation]);
 
@@ -79,11 +73,13 @@ export default function Home() {
 
     const newMessage = {sender: 'user', text: input};
     setMessages([...messages, newMessage]);
-    setInput('');
 
+    // Update conversation name immediately after sending the message
     if (messages.length === 0) {
-      updateConversationName(input); // Name new conversation using nameConversation flow
+      await updateConversationName(input);
     }
+
+    setInput('');
 
     // Simulate bot response (replace with actual API call)
     setTimeout(() => {
@@ -124,16 +120,21 @@ export default function Home() {
     }
   };
 
-  const createNewConversation = () => {
-    const newConversationName = `Conversation ${conversationHistory.length + 1}`;
-    setConversationHistory([...conversationHistory, newConversationName]);
+  const createNewConversation = async () => {
+    const tempConversationName = `Conversation ${conversationHistory.length + 1}`;
+    setConversationHistory([...conversationHistory, tempConversationName]);
     localStorage.setItem(
       'conversationHistory',
-      JSON.stringify([...conversationHistory, newConversationName])
+      JSON.stringify([...conversationHistory, tempConversationName])
     );
-    setSelectedConversation(newConversationName);
+    setSelectedConversation(tempConversationName);
     setMessages([]);
     setSummary(null);
+
+    // Immediately update the conversation name based on the first message
+    // For now using a placeholder message "New Conversation"
+
+    await updateConversationName("New Conversation");
   };
 
   const deleteConversation = () => {
@@ -261,11 +262,6 @@ export default function Home() {
             />
             <Button onClick={sendMessage}>Send</Button>
             <Button variant="destructive" onClick={deleteConversation}><Trash className="h-4 w-4"/></Button>
-            {!open && (
-              <Button variant="secondary" onClick={() => setOpen(true)}>
-                Reopen Sidebar
-              </Button>
-            )}
           </div>
         </Card>
       </div>
