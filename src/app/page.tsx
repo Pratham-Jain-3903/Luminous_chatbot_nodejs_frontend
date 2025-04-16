@@ -92,22 +92,50 @@ export default function Home() {
 
     const userMessage = {sender: 'user', text: input};
 
-    // Optimistically update the conversation name with the user's first message
-    const tempConversationName = input.substring(0, 20) + "...";
-    if (messages.length === 1) {
-      setSelectedConversation(tempConversationName);
-      const updatedHistory = [...conversationHistory, tempConversationName];
-      setConversationHistory(updatedHistory);
-      localStorage.setItem('conversationHistory', JSON.stringify(updatedHistory));
-    }
-
+    // Add the user message to the messages state immediately
     setMessages((prevMessages) => [...prevMessages, userMessage]);
+    setInput(''); // Clear the input field
 
-    setInput('');
+    if (messages.length === 1) {
+      try {
+        // Optimistically set a temporary conversation name
+        const tempConversationName = input.substring(0, 20) + "...";
+        setSelectedConversation(tempConversationName);
+        const updatedHistory = [...conversationHistory, tempConversationName];
+        setConversationHistory(updatedHistory);
+        localStorage.setItem('conversationHistory', JSON.stringify(updatedHistory));
+
+        // Await the AI's suggestion for a better conversation name
+        const result = await nameConversation({ firstMessage: input });
+        const newConversationName = result?.conversationName || "New Conversation";
+
+        // Update conversation history with the new name
+        const finalUpdatedHistory = conversationHistory.map(name =>
+            name === tempConversationName ? newConversationName : name
+        );
+        setConversationHistory(finalUpdatedHistory);
+        localStorage.setItem('conversationHistory', JSON.stringify(finalUpdatedHistory));
+        setSelectedConversation(newConversationName);
+      } catch (error) {
+        console.error('Error naming conversation:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to generate conversation name.',
+        });
+        // Handle naming failure gracefully, perhaps setting a default name
+        const finalUpdatedHistory = conversationHistory.map(name =>
+            name === tempConversationName ? "Error: Naming Failed" : name
+        );
+        setConversationHistory(finalUpdatedHistory);
+        localStorage.setItem('conversationHistory', JSON.stringify(finalUpdatedHistory));
+        setSelectedConversation("Error: Naming Failed");
+      }
+    }
 
     // Call Gemini completion
     complete(input);
   };
+
 
   useEffect(() => {
     if (completion) {
