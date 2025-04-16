@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, {useState, useEffect} from 'react';
@@ -66,6 +65,14 @@ export default function Home() {
     if (selectedConversation) {
       localStorage.setItem(selectedConversation, JSON.stringify(messages));
       updateSummary(messages);
+      if (messages.length > 0) {
+        const firstMessage = messages[0].text.substring(0, 20);
+        const updatedHistory = conversationHistory.map((name) =>
+          name === selectedConversation ? firstMessage : name
+        );
+        setConversationHistory(updatedHistory);
+        localStorage.setItem('conversationHistory', JSON.stringify(updatedHistory));
+      }
     }
   }, [messages, selectedConversation]);
 
@@ -156,7 +163,7 @@ export default function Home() {
             <Plus className="h-4 w-4"/>
           </SidebarTrigger>
           <Image
-            src="https://picsum.photos/40/40" // Replace with actual Luminous logo URL
+            src="/luminous-logo.png"
             alt="Luminous Logo"
             width={40}
             height={40}
