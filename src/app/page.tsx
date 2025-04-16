@@ -29,7 +29,7 @@ import {DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem
 import {AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogFooter, AlertDialogTitle, AlertDialogDescription, AlertDialogAction, AlertDialogCancel} from '@/components/ui/alert-dialog';
 import {Input} from '@/components/ui/input';
 import {ThemeToggle} from '@/components/theme-toggle';
-import {Navbar} from '@/components/ui/navbar';
+import {Navbar} from '@/components/ui/navbar'; // Import the new Navbar component
 
 interface Message {
   sender: string;
@@ -238,27 +238,26 @@ export default function Home() {
   };
 
   return (
-    
-      
-        
-          
-            
-              <SidebarTrigger />
-            
-            
-              <Image
-                src="/luminous-logo.png"
-                alt="Luminous Logo"
-                width={40}
-                height={40}
-              />
-            
+    <>
+      <Navbar /> {/* Add the Navbar component here */}
+      <div className="flex">
+        <Sidebar className="w-60">
+          <SidebarHeader>
+            <SidebarTrigger>
+              <Plus className="h-4 w-4"/>
+            </SidebarTrigger>
+            <Image
+              src="https://picsum.photos/40/40"
+              alt="Luminous Logo"
+              width={40}
+              height={40}
+            />
             <SidebarInput placeholder="Search..."/>
             <ThemeToggle />
-          
-          
-            
-              
+          </SidebarHeader>
+          <SidebarContent>
+            <SidebarGroup>
+              <SidebarMenu>
                 {conversationHistory.map((conversationName) => (
                   <SidebarMenuItem key={conversationName}>
                     <DropdownMenu>
@@ -273,7 +272,7 @@ export default function Home() {
                       <DropdownMenuContent>
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuItem onClick={handleRenameConversation}>
-                          
+                          <Edit className="mr-2 h-4 w-4"/>
                           <span>Rename</span>
                           <DropdownMenuShortcut>⌘⇧R</DropdownMenuShortcut>
                         </DropdownMenuItem>
@@ -281,7 +280,7 @@ export default function Home() {
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <DropdownMenuItem className="text-destructive">
-                              
+                              <Trash className="mr-2 h-4 w-4"/>
                               <span>Delete</span>
                               <DropdownMenuShortcut>⌘⇧D</DropdownMenuShortcut>
                             </DropdownMenuItem>
@@ -304,53 +303,58 @@ export default function Home() {
                     </DropdownMenu>
                   </SidebarMenuItem>
                 ))}
-              
-            
-          
-          
-            
+              </SidebarMenu>
+            </SidebarGroup>
+          </SidebarContent>
+          <SidebarFooter>
+            <Button variant="outline" onClick={createNewConversation}>
               Create New Conversation
-            
-          
-        
-        
-          
-            {loadingSummary && <Loader2 className="h-4 w-4 animate-spin"/>}
-            {summary && <div className="mb-4 rounded-md border p-2 text-sm">{summary}</div>}
-            
-              {messages.map((message, index) => (
-                
-                  
-                    
+            </Button>
+          </SidebarFooter>
+        </Sidebar>
+        <div className="flex-1 p-4">
+          <Card className="h-full flex flex-col">
+            <CardContent className="flex-1 overflow-y-auto">
+              {loadingSummary && <Loader2 className="h-4 w-4 animate-spin"/>}
+              {summary && <div className="mb-4 rounded-md border p-2 text-sm">{summary}</div>}
+              <div className="space-y-2">
+                {messages.map((message, index) => (
+                  <div
+                    key={index}
+                    className={cn(
+                      'flex w-full flex-col',
+                      message.sender === 'user' ? 'items-end' : 'items-start'
+                    )}
+                  >
+                    <div
+                      className={cn(
+                        'inline-flex items-center justify-center rounded-full border px-3 py-1 text-sm font-medium',
+                        message.sender === 'user' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground'
+                      )}
+                    >
                       {message.text}
-                    
-                    
-                      {message.sender}
-                    
-                  
-                
-              ))}
-              {loadingResponse && <Loader2 className="h-4 w-4 animate-spin"/>}
-            
-          
-          
-            
-              
-                <Textarea
-                  placeholder="Type your message here..."
-                  value={input}
-                  onChange={handleInputChange}
-                  onKeyDown={handleKeyDown}
-                  className="flex-1 resize-none rounded-md border p-2"
-                />
-                <Button onClick={sendMessage} disabled={loadingResponse}>
-                  {loadingResponse ? 'Loading...' : 'Send'}
-                </Button>
-              
-            
-          
-        
-      
+                    </div>
+                    <div className="text-xs text-muted-foreground">{message.sender}</div>
+                  </div>
+                ))}
+                {loadingResponse && <Loader2 className="h-4 w-4 animate-spin"/>}
+              </div>
+            </CardContent>
+            <div className="m-4 flex items-center space-x-2">
+              <Textarea
+                placeholder="Type your message here..."
+                value={input}
+                onChange={handleInputChange}
+                onKeyDown={handleKeyDown}
+                className="flex-1 resize-none rounded-md border p-2"
+              />
+              <Button onClick={sendMessage} disabled={loadingResponse}>
+                {loadingResponse ? 'Loading...' : 'Send'}
+              </Button>
+            </div>
+          </Card>
+        </div>
+      </div>
       {/* Rename Conversation Dialog */}
       <AlertDialog open={renamingConversation} onOpenChange={setRenamingConversation}>
         <AlertDialogContent>
@@ -358,19 +362,19 @@ export default function Home() {
             <AlertDialogTitle>Rename Conversation</AlertDialogTitle>
             <AlertDialogDescription>Enter a new name for this conversation.</AlertDialogDescription>
           </AlertDialogHeader>
-          
-            
-              
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <label htmlFor="name" className="text-right text-sm font-medium leading-none text-right">
                 Name
-              
+              </label>
               <Input
                 id="name"
                 value={newConversationName}
                 onChange={(e) => setNewConversationName(e.target.value)}
                 className="col-span-3"
               />
-            
-          
+            </div>
+          </div>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => {
               setRenamingConversation(false);
@@ -380,6 +384,6 @@ export default function Home() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    
+    </>
   );
 }

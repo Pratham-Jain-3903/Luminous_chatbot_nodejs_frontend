@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   title: 'ChatMate',
   description: 'Your AI Powered Chatbot',
   // Replace with actual Luminous logo URL
-  //icon: '/luminous-logo.png',
+  icons: 'https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.freelogovectors.net%2Fluminous-logo%2F&psig=AOvVaw3Rx4h-_ucoB9eMkECGL_0h&ust=1744881556767000&source=images&cd=vfe&opi=89978449&ved=0CBQQjRxqFwoTCMDL2ruc3IwDFQAAAAAdAAAAABAE',
 };
 
 export default function RootLayout({
