@@ -12,6 +12,7 @@ import {
   SidebarInput,
   useSidebar,
   SidebarTrigger,
+  SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import {Card, CardContent} from '@/components/ui/card';
 import {Button} from '@/components/ui/button';
@@ -28,6 +29,7 @@ import {AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, 
 import {Input} from '@/components/ui/input';
 import {ThemeToggle} from '@/components/theme-toggle';
 import { useCompletion } from 'ai/react';
+import { SidebarProvider } from '@/components/ui/sidebar';
 
 
 interface Message {
@@ -237,153 +239,154 @@ export default function Home() {
       description: 'The conversation has been renamed.',
     });
   };
-
   return (
-    
-      
-        
-          
-            
+    <SidebarProvider>
+      <div className="flex h-screen">
+        <Sidebar>
+          <SidebarHeader>
+            <div className="flex items-center justify-between p-4">
               <SidebarTrigger>
                 <Plus className="h-4 w-4"/>
               </SidebarTrigger>
-              
-                <Image
-                  src="/luminous-logo.png"
-                  alt="Luminous Logo"
-                  width={40}
-                  height={40}
-                />
-              
+              <Image
+                src="/luminous-logo.png"
+                alt="Luminous Logo"
+                width={40}
+                height={40}
+              />
               <SidebarInput placeholder="Search..."/>
               <ThemeToggle />
-            
+            </div>
+          </SidebarHeader>
           
-          
-            
-              
+          <SidebarContent>
+            <SidebarMenu>
+              <SidebarGroup>
                 {conversationHistory.map((conversationName) => (
-                  
-                    
-                      
-                        
+                  <SidebarMenuItem key={conversationName}>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <SidebarMenuButton
+                          onClick={() => selectConversation(conversationName)}
+                          isActive={selectedConversation === conversationName}
+                        >
                           {conversationName}
+                        </SidebarMenuButton>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuItem onClick={handleRenameConversation}>
+                          <Edit className="mr-2 h-4 w-4"/>
+                          <span>Rename</span>
+                          <DropdownMenuShortcut>⌘⇧R</DropdownMenuShortcut>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator/>
                         
-                      
-                      
-                        
-                          Actions
-                          
-                            
-                              
-                                Rename
-                                <DropdownMenuShortcut>⌘⇧R</DropdownMenuShortcut>
-                              
-                            
-                            
-                              
-                                
-                                  Are you absolutely sure?
-                                  This action cannot be undone. This will permanently delete the conversation and remove
-                                  it from your history.
-                                
-                                
-                                  Cancel
-                                  Continue
-                                
-                              
-                            
-                          
-                        
-                      
-                    
-                  
+                        {/* Fix for the Delete functionality */}
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <DropdownMenuItem className="text-destructive" onSelect={(e) => e.preventDefault()}>
+                              <Trash className="mr-2 h-4 w-4"/>
+                              <span>Delete</span>
+                              <DropdownMenuShortcut>⌘⇧D</DropdownMenuShortcut>
+                            </DropdownMenuItem>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This action cannot be undone. This will permanently delete the conversation and remove
+                                it from your history.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => deleteConversation()}>Continue</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </SidebarMenuItem>
                 ))}
-              
-            
+              </SidebarGroup>
+            </SidebarMenu>
+          </SidebarContent>
           
-          
-            Create New Conversation
-          
+          <SidebarFooter>
+            <Button onClick={createNewConversation} className="w-full">
+              Create New Conversation
+            </Button>
+          </SidebarFooter>
+        </Sidebar>
         
-        
-          
-            
+        <div className="flex flex-1 flex-col overflow-hidden">
+          <Card className="flex-1 overflow-y-auto">
+            <CardContent className="p-4">
               {loadingSummary && <Loader2 className="h-4 w-4 animate-spin"/>}
               {summary && <div className="mb-4 rounded-md border p-2 text-sm">{summary}</div>}
-              
+              <div className="space-y-4">
                 {messages.map((message, index) => (
-                  
-                    
+                  <div key={index} className={cn("flex", message.sender === 'user' ? "justify-end" : "justify-start")}>
+                    <div className={cn("rounded-lg p-3", message.sender === 'user' ? "bg-primary text-primary-foreground" : "bg-muted")}>
                       {message.text}
-                    
+                    </div>
                     <Avatar className="ml-2">
                       <AvatarFallback>{message.sender}</AvatarFallback>
                     </Avatar>
-                  
+                  </div>
                 ))}
                 {loadingResponse && <Loader2 className="h-4 w-4 animate-spin"/>}
-              
-            
+              </div>
+            </CardContent>
+          </Card>
           
-          
-            
-              
-                <Textarea
-                  placeholder="Type your message here..."
-                  value={input}
-                  onChange={handleInputChange}
-                  onKeyDown={handleKeyDown}
-                  className="flex-1 resize-none rounded-md border p-2"
-                />
-                
-                  {loadingResponse ? 'Loading...' : 'Send'}
-                
-              
-            
-          
-    
+          <div className="p-4">
+            <div className="flex items-center space-x-2">
+              <Textarea
+                placeholder="Type your message here..."
+                value={input}
+                onChange={handleInputChange}
+                onKeyDown={handleKeyDown}
+                className="flex-1 resize-none rounded-md border p-2"
+              />
+              <Button onClick={sendMessage} disabled={loadingResponse || !input.trim()}>
+                {loadingResponse ? 'Loading...' : 'Send'}
+              </Button>
+            </div>
+          </div>
+        </div>
   
-        
-          
-            
-              Rename Conversation
-            
-            
-              Enter a new name for this conversation.
-            
-            
-              
-                
+        {/* Rename Conversation Dialog */}
+        <AlertDialog open={renamingConversation} onOpenChange={setRenamingConversation}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                Rename Conversation
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                Enter a new name for this conversation.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <label htmlFor="name" className="text-right">
                   Name
-                
-                
-                  
-                  
-                
-              
-            
-            
-              Cancel
-              Rename
-            
-          
-        
-        
-          
-            
-              Are you absolutely sure?
-              This action cannot be undone. This will permanently delete the conversation and remove
-              it from your history.
-            
-            
-              
-                Cancel
-                Continue
-              
-            
-          
-        
-      
-    
+                </label>
+                <Input 
+                  id="name"
+                  value={newConversationName} 
+                  onChange={(e) => setNewConversationName(e.target.value)}
+                  className="col-span-3"
+                />
+              </div>
+            </div>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmRenameConversation}>Rename</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    </SidebarProvider>
   )};

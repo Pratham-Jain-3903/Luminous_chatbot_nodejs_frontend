@@ -32,36 +32,31 @@ export function Navbar() {
   return (
     <nav className="bg-background border-b sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-2 sm:px-3 lg:px-4">
-        {" "}
         {/* Reduced padding here */}
         <div className="flex items-center justify-between h-12">
-          {" "}
           {/* Reduced height here */}
           {/* Logo and Brand */}
           <div className="flex-shrink-0 flex items-center">
             <Link href="/" className="text-xl font-semibold text-primary">
-              ChatMate
+              Luminous ChatMate
             </Link>
           </div>
           {/* Desktop Navigation */}
           <div className="hidden md:block">
             <div className="ml-10 flex items-center space-x-2">
-              {" "}
               {/* Reduced spacing here */}
               {/* Customer Care */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="flex items-center text-xs">
-                    {" "}
                     {/* Reduced font size here */}
                     <Phone className="mr-1 h-3 w-3" /> {/* Reduced icon size */}
                     Customer Care
-                    <ChevronDown className="ml-0.5 h-3 w-3" />{" "}
+                    <ChevronDown className="ml-0.5 h-3 w-3" />
                     {/* Reduced icon size */}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
-                  {" "}
                   {/* Reduced width here */}
                   <DropdownMenuLabel>Helpline Numbers</DropdownMenuLabel>
                   <DropdownMenuSeparator />
@@ -94,17 +89,15 @@ export function Navbar() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="flex items-center text-xs">
-                    {" "}
                     {/* Reduced font size here */}
-                    <HelpCircle className="mr-1 h-3 w-3" />{" "}
+                    <HelpCircle className="mr-1 h-3 w-3" />
                     {/* Reduced icon size */}
                     Useful Links
-                    <ChevronDown className="ml-0.5 h-3 w-3" />{" "}
+                    <ChevronDown className="ml-0.5 h-3 w-3" />
                     {/* Reduced icon size */}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
-                  {" "}
                   {/* Reduced width here */}
                   <DropdownMenuItem>
                     <Link
@@ -184,17 +177,15 @@ export function Navbar() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="flex items-center text-xs">
-                    {" "}
                     {/* Reduced font size here */}
-                    <FileText className="mr-1 h-3 w-3" />{" "}
+                    <FileText className="mr-1 h-3 w-3" />
                     {/* Reduced icon size */}
                     Policies
-                    <ChevronDown className="ml-0.5 h-3 w-3" />{" "}
+                    <ChevronDown className="ml-0.5 h-3 w-3" />
                     {/* Reduced icon size */}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
-                  {" "}
                   {/* Reduced width here */}
                   <DropdownMenuItem>
                     <Link
@@ -250,17 +241,15 @@ export function Navbar() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="flex items-center text-xs">
-                    {" "}
                     {/* Reduced font size here */}
-                    <Building className="mr-1 h-3 w-3" />{" "}
+                    <Building className="mr-1 h-3 w-3" />
                     {/* Reduced icon size */}
                     Offices
-                    <ChevronDown className="ml-0.5 h-3 w-3" />{" "}
+                    <ChevronDown className="ml-0.5 h-3 w-3" />
                     {/* Reduced icon size */}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-60">
-                  {" "}
                   {/* Reduced width here */}
                   <DropdownMenuLabel>Our Locations</DropdownMenuLabel>
                   <DropdownMenuSeparator />
