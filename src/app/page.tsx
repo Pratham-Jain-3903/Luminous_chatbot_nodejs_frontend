@@ -238,11 +238,11 @@ export default function Home() {
   };
 
   return (
-    
-      
-        
-          
-            
+    <SidebarProvider>
+      <div className="flex h-screen">
+        <Sidebar>
+          <SidebarHeader>
+            <div className="flex items-center justify-between p-4">
               <SidebarTrigger>
                 <Plus className="h-4 w-4"/>
               </SidebarTrigger>
@@ -254,32 +254,43 @@ export default function Home() {
               />
               <SidebarInput placeholder="Search..."/>
               <ThemeToggle />
-            
-            
-              
-                
-                  {conversationHistory.map((conversationName) => (
-                    <SidebarMenuItem key={conversationName}>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <SidebarMenuButton
-                            onClick={() => selectConversation(conversationName)}
-                            isActive={selectedConversation === conversationName}
-                          >
-                            {conversationName}
-                          </SidebarMenuButton>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem onClick={handleRenameConversation}>
-                            <Edit className="mr-2 h-4 w-4"/>
-                            <span>Rename</span>
-                            <DropdownMenuShortcut>⌘⇧R</DropdownMenuShortcut>
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator/>
+            </div>
+          </SidebarHeader>
+          
+          <SidebarContent>
+            <SidebarMenu>
+              <SidebarGroup>
+                {conversationHistory.map((conversationName) => (
+                  <SidebarMenuItem key={conversationName}>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <SidebarMenuButton
+                          onClick={() => selectConversation(conversationName)}
+                          isActive={selectedConversation === conversationName}
+                        >
+                          {conversationName}
+                        </SidebarMenuButton>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuItem onClick={handleRenameConversation}>
+                          <Edit className="mr-2 h-4 w-4"/>
+                          <span>Rename</span>
+                          <DropdownMenuShortcut>⌘⇧R</DropdownMenuShortcut>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator/>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <DropdownMenuItem className="text-destructive">
+                              <Trash className="mr-2 h-4 w-4"/>
+                              <span>Delete</span>
+                              <DropdownMenuShortcut>⌘⇧D</DropdownMenuShortcut>
+                            </DropdownMenuItem>
+                          </AlertDialogTrigger>
+                          {/* Fix for the Delete functionality */}
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
-                              <DropdownMenuItem className="text-destructive">
+                              <DropdownMenuItem className="text-destructive" onSelect={(e) => e.preventDefault()}>
                                 <Trash className="mr-2 h-4 w-4"/>
                                 <span>Delete</span>
                                 <DropdownMenuShortcut>⌘⇧D</DropdownMenuShortcut>
@@ -295,82 +306,93 @@ export default function Home() {
                               </AlertDialogHeader>
                               <AlertDialogFooter>
                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={deleteConversation}>Continue</AlertDialogAction>
+                                <AlertDialogAction onClick={() => deleteConversation()}>Continue</AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
                           </AlertDialog>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </SidebarMenuItem>
-                  ))}
-                
-              
-            
-            
+                        </AlertDialog>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarGroup>
+            </SidebarMenu>
+          </SidebarContent>
+          
+          <SidebarFooter>
+            <Button onClick={createNewConversation} className="w-full">
               Create New Conversation
-            
-          
+            </Button>
+          </SidebarFooter>
+        </Sidebar>
         
-        
-          
-            
+        <div className="flex flex-1 flex-col overflow-hidden">
+          <Card className="flex-1 overflow-y-auto">
+            <CardContent className="p-4">
               {loadingSummary && <Loader2 className="h-4 w-4 animate-spin"/>}
               {summary && <div className="mb-4 rounded-md border p-2 text-sm">{summary}</div>}
-              
+              <div className="space-y-4">
                 {messages.map((message, index) => (
-                  
-                    
+                  <div key={index} className={cn("flex", message.sender === 'user' ? "justify-end" : "justify-start")}>
+                    <div className={cn("rounded-lg p-3", message.sender === 'user' ? "bg-primary text-primary-foreground" : "bg-muted")}>
                       {message.text}
-                    
-                    {message.sender}
-                  
+                    </div>
+                    <Avatar className="ml-2">
+                      <AvatarFallback>{message.sender}</AvatarFallback>
+                    </Avatar>
+                  </div>
                 ))}
                 {loadingResponse && <Loader2 className="h-4 w-4 animate-spin"/>}
-              
-            
-            
-              
-                <Textarea
-                  placeholder="Type your message here..."
-                  value={input}
-                  onChange={handleInputChange}
-                  onKeyDown={handleKeyDown}
-                  className="flex-1 resize-none rounded-md border p-2"
+              </div>
+            </CardContent>
+          </Card>
+          
+          <div className="p-4">
+            <div className="flex items-center space-x-2">
+              <Textarea
+                placeholder="Type your message here..."
+                value={input}
+                onChange={handleInputChange}
+                onKeyDown={handleKeyDown}
+                className="flex-1 resize-none rounded-md border p-2"
+              />
+              <Button onClick={sendMessage} disabled={loadingResponse || !input.trim()}>
+                {loadingResponse ? 'Loading...' : 'Send'}
+              </Button>
+            </div>
+          </div>
+        </div>
+  
+        {/* Rename Conversation Dialog */}
+        <AlertDialog open={renamingConversation} onOpenChange={setRenamingConversation}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                Rename Conversation
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                Enter a new name for this conversation.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <label htmlFor="name" className="text-right">
+                  Name
+                </label>
+                <Input 
+                  id="name"
+                  value={newConversationName} 
+                  onChange={(e) => setNewConversationName(e.target.value)}
+                  className="col-span-3"
                 />
-                
-                  {loadingResponse ? 'Loading...' : 'Send'}
-                
-              
-            
-          
-        
-      
-
-      {/* Rename Conversation Dialog */}
-      <AlertDialog open={renamingConversation} onOpenChange={setRenamingConversation}>
-        
-          
-            
-              Rename Conversation
-            
-            Enter a new name for this conversation.
-          
-          
-            
-              
-                Name
-              
-              
-            
-          
-          
-            
-              Cancel
-              Rename
-            
-          
-        
-      </AlertDialog>
-    
-  );
-}
+              </div>
+            </div>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmRenameConversation}>Rename</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    </SidebarProvider>
+  )};
