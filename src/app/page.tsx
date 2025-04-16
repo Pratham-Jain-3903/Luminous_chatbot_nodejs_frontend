@@ -247,7 +247,7 @@ export default function Home() {
               <Plus className="h-4 w-4"/>
             </SidebarTrigger>
             <Image
-              src="https://picsum.photos/40/40"
+              src="/luminous-logo.png"
               alt="Luminous Logo"
               width={40}
               height={40}
