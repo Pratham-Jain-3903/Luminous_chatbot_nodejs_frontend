@@ -159,13 +159,15 @@ export default function Home() {
   const deleteConversation = () => {
     if (!selectedConversation) return;
 
-    const updatedHistory = conversationHistory.filter((name) => name !== selectedConversation);
-    setConversationHistory(updatedHistory);
-    localStorage.setItem('conversationHistory', JSON.stringify(updatedHistory));
     localStorage.removeItem(selectedConversation);
     setSelectedConversation(null);
     setMessages([]);
     setSummary(null);
+
+    // Remove the conversation from the conversation history
+    const updatedHistory = conversationHistory.filter((name) => name !== selectedConversation);
+    setConversationHistory(updatedHistory);
+    localStorage.setItem('conversationHistory', JSON.stringify(updatedHistory));
 
     toast({
       title: 'Conversation Deleted',
