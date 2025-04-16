@@ -21,7 +21,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { useSidebar } from "@/components/ui/sidebar";
 
-export function Navbar() {
+import { cn } from "@/lib/utils"; // Import cn utility
+
+// Define props interface for Navbar
+interface NavbarProps {
+  className?: string;
+}
+
+export function Navbar({ className }: NavbarProps) { // Accept className prop
   const { open: sidebarOpen } = useSidebar();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -30,7 +37,7 @@ export function Navbar() {
   };
 
   return (
-    <nav className="bg-background border-b sticky top-0 z-50">
+    <nav className={cn("bg-background border-b sticky top-0 z-50", className)}> {/* Use cn utility */}
       <div className="max-w-7xl mx-auto px-2 sm:px-3 lg:px-4">
         {/* Reduced padding here */}
         <div className="flex items-center justify-between h-12">
@@ -323,6 +330,7 @@ export function Navbar() {
       {isMobileMenuOpen && (
         <div className="md:hidden">
           <div className="px-1 pt-1 pb-2 space-y-0.5 sm:px-1">
+            {/* TODO: Add mobile dropdown functionality here */}
             <button className="w-full text-left block px-1 py-1 rounded-md text-xs font-medium hover:bg-primary hover:text-primary-foreground">
               Customer Care
             </button>
@@ -342,4 +350,5 @@ export function Navbar() {
   );
 }
 
-export default Navbar;
+// Removed default export as Navbar is likely used as a named import
+// export default Navbar;

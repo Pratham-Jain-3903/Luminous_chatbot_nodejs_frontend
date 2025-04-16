@@ -4,6 +4,7 @@ import './globals.css';
 import {ThemeProvider} from 'next-themes';
 import {Navbar} from '@/components/ui/navbar';
 import {SidebarProvider} from '@/components/ui/sidebar';
+import { cn } from '@/lib/utils'; // Import cn utility
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -21,6 +22,7 @@ export const metadata: Metadata = {
   icons: '/luminous-logo.png',
 };
 
+// layout.tsx
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -28,15 +30,16 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <SidebarProvider>
-            <Navbar />
-            {children}
+            <Navbar className="h-16 border-b" />
+            <div className="flex-1 flex overflow-hidden">
+              {children}
+            </div>
           </SidebarProvider>
         </ThemeProvider>
       </body>
     </html>
   );
 }
-
