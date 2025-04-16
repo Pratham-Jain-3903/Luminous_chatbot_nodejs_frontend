@@ -276,12 +276,7 @@ export default function Home() {
               <SidebarTrigger>
                 <Plus className="h-4 w-4"/>
               </SidebarTrigger>
-              <Image
-                src="/luminous-logo.png"
-                alt="Luminous Logo"
-                width={40}
-                height={40}
-              />
+              
               <SidebarInput placeholder="Search..."/>
               <ThemeToggle />
             </div>
@@ -418,3 +413,4 @@ export default function Home() {
       </div>
     </SidebarProvider>
   )};
+
