@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, {useState, useEffect, useRef} from 'react';
@@ -20,12 +19,15 @@ import {Button} from '@/components/ui/button';
 import {Textarea} from '@/components/ui/textarea';
 import {useToast} from '@/hooks/use-toast';
 import {summarizeConversation} from '@/ai/flows/summarize-conversation';
-import {Loader2, Plus, Trash} from 'lucide-react';
+import {Loader2, Plus, Trash, Edit} from 'lucide-react';
 import {Avatar, AvatarFallback, AvatarImage} from '@/components/ui/avatar';
 import {cn} from '@/lib/utils';
 import Image from 'next/image';
 import {nameConversation} from '@/ai/flows/name-conversation';
-import { useCompletion } from 'ai/react';
+import {useCompletion} from 'ai/react';
+import {DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuShortcut} from '@/components/ui/dropdown-menu';
+import {AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogFooter, AlertDialogTitle, AlertDialogDescription, AlertDialogAction, AlertDialogCancel} from '@/components/ui/alert-dialog';
+import {Input} from '@/components/ui/input';
 
 interface Message {
   sender: string;
@@ -44,10 +46,12 @@ export default function Home() {
   const [loadingSummary, setLoadingSummary] = useState(false);
   const [conversationHistory, setConversationHistory] = useState<string[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
-  const { complete, completion, isLoading: loadingResponse, stop } = useCompletion({
+  const {complete, completion, isLoading: loadingResponse, stop} = useCompletion({
     api: '/api/completion',
     //onFinish: handleOnFinish,
   });
+  const [renamingConversation, setRenamingConversation] = useState(false);
+  const [newConversationName, setNewConversationName] = useState('');
 
   const {toast} = useToast();
   const {open, setOpen} = useSidebar();
@@ -83,15 +87,17 @@ export default function Home() {
     if (!input.trim()) return;
 
     const userMessage = {sender: 'user', text: input};
-    setMessages((prevMessages) => [...prevMessages, userMessage]);
 
-    // Update conversation name immediately after sending the message
+    // Optimistically update the conversation name with the user's first message
+    const tempConversationName = input.substring(0, 20) + "...";
     if (messages.length === 1) {
-      await updateConversationName(input);
+      setSelectedConversation(tempConversationName);
+      const updatedHistory = [...conversationHistory, tempConversationName];
+      setConversationHistory(updatedHistory);
+      localStorage.setItem('conversationHistory', JSON.stringify(updatedHistory));
     }
 
-    const tempConversationName = input.substring(0, 20) + "...";
-    setSelectedConversation(tempConversationName);
+    setMessages((prevMessages) => [...prevMessages, userMessage]);
 
     setInput('');
 
@@ -101,7 +107,7 @@ export default function Home() {
 
   useEffect(() => {
     if (completion) {
-      const botResponse = { sender: 'bot', text: completion };
+      const botResponse = {sender: 'bot', text: completion};
       setMessages((prevMessages) => [...prevMessages, botResponse]);
     }
   }, [completion]);
@@ -148,11 +154,6 @@ export default function Home() {
     setSelectedConversation(tempConversationName);
     setMessages([]);
     setSummary(null);
-
-    // Immediately update the conversation name based on the first message
-    // For now using a placeholder message "New Conversation"
-
-    await updateConversationName("New Conversation");
   };
 
   const deleteConversation = () => {
@@ -206,6 +207,32 @@ export default function Home() {
     }
   };
 
+  const handleRenameConversation = () => {
+    setRenamingConversation(true);
+    setNewConversationName(selectedConversation || ''); // Initialize with the current name
+  };
+
+  const confirmRenameConversation = () => {
+    if (!selectedConversation) return;
+
+    const updatedHistory = conversationHistory.map((name) =>
+      name === selectedConversation ? newConversationName : name
+    );
+
+    setConversationHistory(updatedHistory);
+    localStorage.setItem('conversationHistory', JSON.stringify(updatedHistory));
+    localStorage.setItem(newConversationName, localStorage.getItem(selectedConversation) || '');
+    localStorage.removeItem(selectedConversation);
+    setSelectedConversation(newConversationName);
+    setRenamingConversation(false);
+    setNewConversationName('');
+
+    toast({
+      title: 'Conversation Renamed',
+      description: 'The conversation has been renamed.',
+    });
+  };
+
   return (
     <>
       <Sidebar className="w-60">
@@ -226,12 +253,47 @@ export default function Home() {
             <SidebarMenu>
               {conversationHistory.map((conversationName) => (
                 <SidebarMenuItem key={conversationName}>
-                  <SidebarMenuButton
-                    onClick={() => selectConversation(conversationName)}
-                    isActive={selectedConversation === conversationName}
-                  >
-                    {conversationName}
-                  </SidebarMenuButton>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <SidebarMenuButton
+                        onClick={() => selectConversation(conversationName)}
+                        isActive={selectedConversation === conversationName}
+                      >
+                        {conversationName}
+                      </SidebarMenuButton>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                      <DropdownMenuItem onClick={handleRenameConversation}>
+                        <Edit className="mr-2 h-4 w-4"/>
+                        <span>Rename</span>
+                        <DropdownMenuShortcut>⌘⇧R</DropdownMenuShortcut>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator/>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <DropdownMenuItem className="text-destructive">
+                            <Trash className="mr-2 h-4 w-4"/>
+                            <span>Delete</span>
+                            <DropdownMenuShortcut>⌘⇧D</DropdownMenuShortcut>
+                          </DropdownMenuItem>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This action cannot be undone. This will permanently delete the conversation and remove
+                              it from your history.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={deleteConversation}>Continue</AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
@@ -282,11 +344,38 @@ export default function Home() {
             <Button onClick={sendMessage} disabled={loadingResponse}>
               {loadingResponse ? 'Loading...' : 'Send'}
             </Button>
-            <Button variant="destructive" onClick={deleteConversation}><Trash className="h-4 w-4"/></Button>
           </div>
         </Card>
       </div>
+      {/* Rename Conversation Dialog */}
+      <AlertDialog open={renamingConversation} onOpenChange={setRenamingConversation}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Rename Conversation</AlertDialogTitle>
+            <AlertDialogDescription>Enter a new name for this conversation.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <label htmlFor="name" className="text-right text-sm font-medium leading-none text-right">
+                Name
+              </label>
+              <Input
+                id="name"
+                value={newConversationName}
+                onChange={(e) => setNewConversationName(e.target.value)}
+                className="col-span-3"
+              />
+            </div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setRenamingConversation(false);
+              setNewConversationName('');
+            }}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmRenameConversation}>Rename</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
-
