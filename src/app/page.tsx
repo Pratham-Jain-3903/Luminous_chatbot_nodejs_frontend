@@ -28,6 +28,7 @@ import {useCompletion} from 'ai/react';
 import {DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuShortcut} from '@/components/ui/dropdown-menu';
 import {AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogFooter, AlertDialogTitle, AlertDialogDescription, AlertDialogAction, AlertDialogCancel} from '@/components/ui/alert-dialog';
 import {Input} from '@/components/ui/input';
+import {ThemeToggle} from '@/components/theme-toggle';
 
 interface Message {
   sender: string;
@@ -305,6 +306,7 @@ export default function Home() {
           <Button variant="outline" onClick={createNewConversation}>
             Create New Conversation
           </Button>
+          <ThemeToggle />
         </SidebarFooter>
       </Sidebar>
       <div className="flex-1 p-4">
