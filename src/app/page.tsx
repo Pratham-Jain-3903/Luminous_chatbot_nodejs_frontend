@@ -24,6 +24,7 @@ import {Loader2, Plus, Trash} from 'lucide-react';
 import {Avatar, AvatarFallback, AvatarImage} from '@/components/ui/avatar';
 import {cn} from '@/lib/utils';
 import Image from 'next/image';
+import {nameConversation} from '@/ai/flows/name-conversation';
 
 interface Message {
   sender: string;
@@ -66,22 +67,23 @@ export default function Home() {
       localStorage.setItem(selectedConversation, JSON.stringify(messages));
       updateSummary(messages);
       if (messages.length > 0) {
-        const firstMessage = messages[0].text.substring(0, 20);
-        const updatedHistory = conversationHistory.map((name) =>
-          name === selectedConversation ? firstMessage : name
-        );
-        setConversationHistory(updatedHistory);
-        localStorage.setItem('conversationHistory', JSON.stringify(updatedHistory));
+        // Use first message for updated conversation history name
+        const firstMessage = messages[0].text;
+        updateConversationName(firstMessage);
       }
     }
   }, [messages, selectedConversation]);
 
-  const sendMessage = () => {
+  const sendMessage = async () => {
     if (!input.trim()) return;
 
     const newMessage = {sender: 'user', text: input};
     setMessages([...messages, newMessage]);
     setInput('');
+
+    if (messages.length === 0) {
+      updateConversationName(input); // Name new conversation using nameConversation flow
+    }
 
     // Simulate bot response (replace with actual API call)
     setTimeout(() => {
@@ -153,6 +155,36 @@ export default function Home() {
 
   const selectConversation = (conversationName: string) => {
     setSelectedConversation(conversationName);
+  };
+
+  const updateConversationName = async (firstMessage: string) => {
+    if (!selectedConversation) return;
+
+    try {
+      const result = await nameConversation({firstMessage: firstMessage});
+      const newConversationName = result?.conversationName || 'New Conversation';
+
+      const updatedHistory = conversationHistory.map((name) =>
+        name === selectedConversation ? newConversationName : name
+      );
+
+      setConversationHistory(updatedHistory);
+      localStorage.setItem('conversationHistory', JSON.stringify(updatedHistory));
+      setSelectedConversation(newConversationName);
+
+    } catch (error) {
+      console.error('Error naming conversation:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to generate conversation name.',
+      });
+      // Optionally, set a default name if naming fails
+      const updatedHistory = conversationHistory.map((name) =>
+        name === selectedConversation ? "Error: Naming Failed" : name
+      );
+      setConversationHistory(updatedHistory);
+      localStorage.setItem('conversationHistory', JSON.stringify(updatedHistory));
+    }
   };
 
   return (
