@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, {useState, useEffect} from 'react';
@@ -14,6 +13,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
   SidebarInput,
+  useSidebar,
 } from '@/components/ui/sidebar';
 import {Card, CardContent} from '@/components/ui/card';
 import {Button} from '@/components/ui/button';
@@ -38,6 +38,7 @@ export default function Home() {
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
 
   const {toast} = useToast();
+  const {open, setOpen} = useSidebar();
 
   useEffect(() => {
     // Load conversation history from local storage
@@ -146,7 +147,7 @@ export default function Home() {
   };
 
   return (
-    <SidebarProvider>
+    <>
       <Sidebar className="w-60">
         <SidebarHeader>
           <SidebarTrigger>
@@ -213,9 +214,15 @@ export default function Home() {
             />
             <Button onClick={sendMessage}>Send</Button>
             <Button variant="destructive" onClick={deleteConversation}><Trash className="h-4 w-4"/></Button>
+            {!open && (
+              <Button variant="secondary" onClick={() => setOpen(true)}>
+                Reopen Sidebar
+              </Button>
+            )}
           </div>
         </Card>
       </div>
-    </SidebarProvider>
+    </>
   );
 }
+
