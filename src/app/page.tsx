@@ -29,7 +29,7 @@ import {DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem
 import {AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogFooter, AlertDialogTitle, AlertDialogDescription, AlertDialogAction, AlertDialogCancel} from '@/components/ui/alert-dialog';
 import {Input} from '@/components/ui/input';
 import {ThemeToggle} from '@/components/theme-toggle';
-//import {Navbar} from '@/components/ui/navbar';
+import {Navbar} from '@/components/ui/navbar';
 
 interface Message {
   sender: string;
@@ -245,12 +245,14 @@ export default function Home() {
             
               <SidebarTrigger />
             
-            <Image
-              src="/luminous-logo.png"
-              alt="Luminous Logo"
-              width={40}
-              height={40}
-            />
+            
+              <Image
+                src="/luminous-logo.png"
+                alt="Luminous Logo"
+                width={40}
+                height={40}
+              />
+            
             <SidebarInput placeholder="Search..."/>
             <ThemeToggle />
           
