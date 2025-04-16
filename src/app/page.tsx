@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, {useState, useEffect, useRef} from 'react';
@@ -24,19 +25,29 @@ import {Avatar, AvatarFallback, AvatarImage} from '@/components/ui/avatar';
 import {cn} from '@/lib/utils';
 import Image from 'next/image';
 import {nameConversation} from '@/ai/flows/name-conversation';
+import { useCompletion } from 'ai/react';
 
 interface Message {
   sender: string;
   text: string;
 }
 
+const initialMessages: Message[] = [{
+  sender: 'bot',
+  text: "Hello! How can I help you today?",
+}];
+
 export default function Home() {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [input, setInput] = useState('');
   const [summary, setSummary] = useState<string | null>(null);
   const [loadingSummary, setLoadingSummary] = useState(false);
   const [conversationHistory, setConversationHistory] = useState<string[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
+  const { complete, completion, isLoading: loadingResponse, stop } = useCompletion({
+    api: '/api/completion',
+    //onFinish: handleOnFinish,
+  });
 
   const {toast} = useToast();
   const {open, setOpen} = useSidebar();
@@ -71,22 +82,29 @@ export default function Home() {
   const sendMessage = async () => {
     if (!input.trim()) return;
 
-    const newMessage = {sender: 'user', text: input};
-    setMessages([...messages, newMessage]);
+    const userMessage = {sender: 'user', text: input};
+    setMessages((prevMessages) => [...prevMessages, userMessage]);
 
     // Update conversation name immediately after sending the message
-    if (messages.length === 0) {
+    if (messages.length === 1) {
       await updateConversationName(input);
     }
 
+    const tempConversationName = input.substring(0, 20) + "...";
+    setSelectedConversation(tempConversationName);
+
     setInput('');
 
-    // Simulate bot response (replace with actual API call)
-    setTimeout(() => {
-      const botResponse = {sender: 'bot', text: `Echo: ${input}`};
-      setMessages((prevMessages) => [...prevMessages, botResponse]);
-    }, 500);
+    // Call Gemini completion
+    complete(input);
   };
+
+  useEffect(() => {
+    if (completion) {
+      const botResponse = { sender: 'bot', text: completion };
+      setMessages((prevMessages) => [...prevMessages, botResponse]);
+    }
+  }, [completion]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(e.target.value);
@@ -250,6 +268,7 @@ export default function Home() {
                   <div className="text-xs text-muted-foreground">{message.sender}</div>
                 </div>
               ))}
+              {loadingResponse && <Loader2 className="h-4 w-4 animate-spin"/>}
             </div>
           </CardContent>
           <div className="m-4 flex items-center space-x-2">
@@ -260,7 +279,9 @@ export default function Home() {
               onKeyDown={handleKeyDown}
               className="flex-1 resize-none rounded-md border p-2"
             />
-            <Button onClick={sendMessage}>Send</Button>
+            <Button onClick={sendMessage} disabled={loadingResponse}>
+              {loadingResponse ? 'Loading...' : 'Send'}
+            </Button>
             <Button variant="destructive" onClick={deleteConversation}><Trash className="h-4 w-4"/></Button>
           </div>
         </Card>
@@ -268,3 +289,4 @@ export default function Home() {
     </>
   );
 }
+
