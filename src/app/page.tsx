@@ -250,6 +250,7 @@ export default function Home() {
             height={40}
           />
           <SidebarInput placeholder="Search..."/>
+          <ThemeToggle />
         </SidebarHeader>
         <SidebarContent>
           <SidebarGroup>
@@ -306,7 +307,6 @@ export default function Home() {
           <Button variant="outline" onClick={createNewConversation}>
             Create New Conversation
           </Button>
-          <ThemeToggle />
         </SidebarFooter>
       </Sidebar>
       <div className="flex-1 p-4">
@@ -383,3 +383,4 @@ export default function Home() {
     </>
   );
 }
+
