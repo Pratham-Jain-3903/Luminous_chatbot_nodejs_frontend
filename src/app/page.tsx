@@ -28,7 +28,6 @@ import {DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem
 import {AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogFooter, AlertDialogTitle, AlertDialogDescription, AlertDialogAction, AlertDialogCancel} from '@/components/ui/alert-dialog';
 import {Input} from '@/components/ui/input';
 import {ThemeToggle} from '@/components/theme-toggle';
-import { useCompletion } from 'ai/react';
 import { SidebarProvider } from '@/components/ui/sidebar';
 
 
@@ -49,10 +48,7 @@ export default function Home() {
   const [loadingSummary, setLoadingSummary] = useState(false);
   const [conversationHistory, setConversationHistory] = useState<string[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
-  const { complete, completion, isLoading: loadingResponse, stop } =
-    useCompletion({
-      api: '/api/completion',
-    });
+  const [loadingResponse, setLoadingResponse] = useState(false);
   const [renamingConversation, setRenamingConversation] = useState(false);
   const [newConversationName, setNewConversationName] = useState('');
   const [isAlertDialogOpen, setIsAlertDialogOpen] = useState(false);
@@ -89,60 +85,71 @@ export default function Home() {
 
   const sendMessage = async () => {
     if (!input.trim()) return;
-
-    const userMessage = {sender: 'user', text: input};
-
-    // Add the user message to the messages state immediately
-    setMessages((prevMessages) => [...prevMessages, userMessage]);
-    setInput(''); // Clear the input field
-
+  
+    const userMessage = { sender: 'user', text: input };
+    setMessages(prev => [...prev, userMessage]);
+    setInput('');
+  
+    // ← declare here so both try and catch can see it
+    let tempConversationName: string;
+  
     if (messages.length === 1) {
       try {
-        // Optimistically set a temporary conversation name
-        const tempConversationName = input.substring(0, 20) + "...";
+        tempConversationName = input.substring(0, 20) + '...';
         setSelectedConversation(tempConversationName);
         const updatedHistory = [...conversationHistory, tempConversationName];
         setConversationHistory(updatedHistory);
         localStorage.setItem('conversationHistory', JSON.stringify(updatedHistory));
-
-        // Await the AI's suggestion for a better conversation name
+  
         const result = await nameConversation({ firstMessage: input });
-        const newConversationName = result?.conversationName || "New Conversation";
-
-        // Update conversation history with the new name
-        const finalUpdatedHistory = conversationHistory.map(name =>
-            name === tempConversationName ? newConversationName : name
+        const newConversationName = result?.conversationName || 'New Conversation';
+  
+        const finalUpdatedHistory = updatedHistory.map(name =>
+          name === tempConversationName ? newConversationName : name
         );
         setConversationHistory(finalUpdatedHistory);
         localStorage.setItem('conversationHistory', JSON.stringify(finalUpdatedHistory));
         setSelectedConversation(newConversationName);
+  
       } catch (error) {
         console.error('Error naming conversation:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to generate conversation name.',
-        });
-        // Handle naming failure gracefully, perhaps setting a default name
+        toast({ title: 'Error', description: 'Failed to generate conversation name.' });
+  
+        // tempConversationName is now defined
         const finalUpdatedHistory = conversationHistory.map(name =>
-            name === tempConversationName ? "Error: Naming Failed" : name
+          name === tempConversationName ? 'Error: Naming Failed' : name
         );
         setConversationHistory(finalUpdatedHistory);
         localStorage.setItem('conversationHistory', JSON.stringify(finalUpdatedHistory));
-        setSelectedConversation("Error: Naming Failed");
+        setSelectedConversation('Error: Naming Failed');
       }
     }
-
-    // Call Gemini completion
-    complete(input);
-  };
-
-
-  useEffect(() => {
-    if (completion) {
-      const botResponse = {sender: 'bot', text: completion};
-      setMessages((prevMessages) => [...prevMessages, botResponse]);
+  
+    setLoadingResponse(true);
+    try {
+      const response = await fetch('/api/completion', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ conversationId: selectedConversation, messages: [...messages, userMessage] }),
+      });
+  
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+  
+      const data = await response.json();
+      const botResponse = { sender: 'bot', text: data.result };
+      setMessages(prev => [...prev, botResponse]);
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast({ title: 'Error', description: 'Failed to send message.' });
+    } finally {
+      setLoadingResponse(false);
     }
-  }, [completion]);
+  };
+  
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(e.target.value);
@@ -306,7 +313,8 @@ export default function Home() {
                 placeholder="Search..."
                 className="flex-1 bg-background"
               />
-              <ThemeToggle variant="ghost" className="h-8 w-8" />
+              {/* <ThemeToggle variant="ghost" className="h-8 w-8" /> */}
+              <ThemeToggle/>
             </div>
           </SidebarHeader>
 
