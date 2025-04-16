@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, {useState, useEffect} from 'react';
@@ -23,6 +24,7 @@ import {summarizeConversation} from '@/ai/flows/summarize-conversation';
 import {Loader2, Plus, Trash} from 'lucide-react';
 import {Avatar, AvatarFallback, AvatarImage} from '@/components/ui/avatar';
 import {cn} from '@/lib/utils';
+import Image from 'next/image';
 
 interface Message {
   sender: string;
@@ -153,6 +155,12 @@ export default function Home() {
           <SidebarTrigger>
             <Plus className="h-4 w-4"/>
           </SidebarTrigger>
+          <Image
+            src="https://picsum.photos/40/40" // Replace with actual Luminous logo URL
+            alt="Luminous Logo"
+            width={40}
+            height={40}
+          />
           <SidebarInput placeholder="Search..."/>
         </SidebarHeader>
         <SidebarContent>
@@ -225,4 +233,3 @@ export default function Home() {
     </>
   );
 }
-

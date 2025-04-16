@@ -17,6 +17,8 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: 'ChatMate',
   description: 'Your AI Powered Chatbot',
+  // Replace with actual Luminous logo URL
+  //icon: '/luminous-logo.png',
 };
 
 export default function RootLayout({
@@ -34,4 +36,5 @@ export default function RootLayout({
     </html>
   );
 }
+
 
