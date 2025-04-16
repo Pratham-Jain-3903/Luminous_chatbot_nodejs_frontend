@@ -74,7 +74,7 @@ export default function Home() {
       const storedMessages = localStorage.getItem(selectedConversation);
       if (storedMessages) {
         setMessages(JSON.parse(storedMessages));
-        updateSummary(JSON.parse(storedMessages));
+        loadSummary(selectedConversation, JSON.parse(storedMessages));
       }
     }
   }, [selectedConversation]);
@@ -83,7 +83,7 @@ export default function Home() {
     // Save messages to local storage when they change
     if (selectedConversation) {
       localStorage.setItem(selectedConversation, JSON.stringify(messages));
-      updateSummary(messages);
+      updateSummary(selectedConversation, messages);
     }
   }, [messages, selectedConversation]);
 
@@ -155,15 +155,28 @@ export default function Home() {
     }
   };
 
-  const updateSummary = async (msgs: Message[]) => {
-    if (msgs.length === 0) {
-      setSummary(null);
+  const loadSummary = async (conversationName: string, msgs: Message[]) => {
+    const storedSummary = localStorage.getItem(`summary_${conversationName}`);
+    if (storedSummary) {
+      setSummary(storedSummary);
       return;
     }
+    await updateSummary(conversationName, msgs);
+  };
+
+  const updateSummary = async (conversationName: string, msgs: Message[]) => {
+    if (msgs.length === 0) {
+      setSummary(null);
+      localStorage.removeItem(`summary_${conversationName}`);
+      return;
+    }
+
     setLoadingSummary(true);
     try {
       const result = await summarizeConversation({messages: msgs.slice(-10)});
-      setSummary(result?.summary || 'Failed to generate summary.');
+      const newSummary = result?.summary || 'Failed to generate summary.';
+      setSummary(newSummary);
+      localStorage.setItem(`summary_${conversationName}`, newSummary);
     } catch (error) {
       console.error('Error summarizing conversation:', error);
       setSummary('Error generating summary.');
@@ -193,6 +206,7 @@ export default function Home() {
     setIsAlertDialogOpen(false);
 
     localStorage.removeItem(selectedConversation);
+    localStorage.removeItem(`summary_${selectedConversation}`);
     setSelectedConversation(null);
     setMessages([]);
     setSummary(null);
@@ -225,6 +239,10 @@ export default function Home() {
 
       setConversationHistory(updatedHistory);
       localStorage.setItem('conversationHistory', JSON.stringify(updatedHistory));
+      localStorage.setItem(newConversationName, localStorage.getItem(selectedConversation) || '');
+      localStorage.setItem(`summary_${newConversationName}`, localStorage.getItem(`summary_${selectedConversation}`) || '');
+      localStorage.removeItem(selectedConversation);
+      localStorage.removeItem(`summary_${selectedConversation}`);
       setSelectedConversation(newConversationName);
 
     } catch (error) {
@@ -257,7 +275,9 @@ export default function Home() {
     setConversationHistory(updatedHistory);
     localStorage.setItem('conversationHistory', JSON.stringify(updatedHistory));
     localStorage.setItem(newConversationName, localStorage.getItem(selectedConversation) || '');
+    localStorage.setItem(`summary_${newConversationName}`, localStorage.getItem(`summary_${selectedConversation}`) || '');
     localStorage.removeItem(selectedConversation);
+    localStorage.removeItem(`summary_${selectedConversation}`);
     setSelectedConversation(newConversationName);
     setRenamingConversation(false);
     setNewConversationName('');
