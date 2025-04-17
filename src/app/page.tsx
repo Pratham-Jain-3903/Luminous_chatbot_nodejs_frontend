@@ -10,8 +10,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarInput,
-  useSidebar,
-  SidebarTrigger,
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { Card, CardContent } from '@/components/ui/card';
@@ -20,15 +18,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { summarizeConversation } from '@/ai/flows/summarize-conversation';
 import { Loader2, Plus, Trash, Edit, Send } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { nameConversation } from '@/ai/flows/name-conversation';
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuShortcut } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogFooter, AlertDialogTitle, AlertDialogDescription, AlertDialogAction, AlertDialogCancel } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { SidebarProvider } from '@/components/ui/sidebar';
+import { answerMessage } from '@/ai/flows/answer-message';
 
 interface Message {
   sender: string;
@@ -54,11 +53,11 @@ const generateOptimisticName = (userMessage: string): string => {
   // Truncate long messages and use as conversation name
   const nameLimit = 25;
   let name = userMessage.trim();
-  
+
   if (name.length > nameLimit) {
     name = name.substring(0, nameLimit - 3) + '...';
   }
-  
+
   // Ensure name isn't empty
   return name || "New Conversation";
 };
@@ -74,7 +73,7 @@ export default function Home() {
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const [loadingResponse, setLoadingResponse] = useState(false);
   const [newConversationFirstMessage, setNewConversationFirstMessage] = useState<string | null>(null);
-  
+
   // State for rename dialog
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
   const [conversationToRename, setConversationToRename] = useState<string | null>(null);
@@ -102,13 +101,13 @@ export default function Home() {
       setInput('');
       return;
     }
-    
+
     // Load selected conversation from local storage
     const storedMessages = localStorage.getItem(`messages_${selectedConversation}`);
     if (storedMessages) {
       const parsedMessages = JSON.parse(storedMessages);
       setMessages(parsedMessages);
-      
+
       // Load summary
       const storedSummary = localStorage.getItem(`summary_${selectedConversation}`);
       if (storedSummary) {
@@ -123,7 +122,7 @@ export default function Home() {
       // If no messages found, initialize with default
       setMessages(initialMessages);
       setSummary(null);
-      
+
       // Also save initial messages to storage
       localStorage.setItem(`messages_${selectedConversation}`, JSON.stringify(initialMessages));
     }
@@ -134,21 +133,21 @@ export default function Home() {
     // Load conversation history (list of IDs)
     const storedHistory = localStorage.getItem('conversationHistory');
     let history: string[] = [];
-    
+
     if (storedHistory) {
       history = JSON.parse(storedHistory);
       setConversationHistory(history);
     }
-    
+
     // Load conversation names mapping
     const storedNames = localStorage.getItem('conversationNames');
     let names: Record<string, string> = {};
-    
+
     if (storedNames) {
       names = JSON.parse(storedNames);
       setConversationNames(names);
     }
-    
+
     // If there's at least one conversation, select the first one
     if (history.length > 0) {
       setSelectedConversation(history[0]);
@@ -157,149 +156,67 @@ export default function Home() {
 
   // Function to check if the message is addressed to chatmate
   const isChatMateQuery = (message: string): boolean => {
-    // return message.toLowerCase().includes('chatmate');
-    return true
+    return message.toLowerCase().includes('chatmate');
   };
 
-  // // Function to send a message to Gemini with conversation summary
-  // const sendToGemini = async (userQuery: string, conversationSummary: string | null): Promise<string> => {
-  //   try {
-  //     const res = await fetch('/api/gemini', {
-  //       method: 'POST',
-  //       headers: { 'Content-Type': 'application/json' },
-  //       body: JSON.stringify({
-  //         query: userQuery,
-  //         summary: conversationSummary || 'No prior conversation summary.'
-  //       }),
-  //     });
-      
-  //     if (!res.ok) throw new Error(await res.text());
-  //     const { response } = await res.json();
-  //     return response;
-  //   } catch (error: any) {
-  //     console.error('Gemini API error:', error);
-  //     throw new Error('Failed to get response from Gemini: ' + (error.message || 'Unknown error'));
-  //   }
-  // };
 
-  const sendToGemini = async (userQuery: string, conversationSummary: string | null): Promise<string> => {
-    try {
-      if (!process.env.NEXT_PUBLIC_GEMINI_ENABLED) {
-        throw new Error('Gemini integration is disabled');
-      }
-  
-      const res = await fetch('/api/gemini', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          query: userQuery,
-          summary: conversationSummary || 'No prior conversation summary.'
-        }),
-      });
-      
-      // First check if the response is OK
-      if (!res.ok) {
-        // Try to get the error message from response
-        let errorText;
-        
-        // Check the content type to determine how to parse the response
-        const contentType = res.headers.get('content-type');
-        if (contentType && contentType.includes('application/json')) {
-          // Parse as JSON if it's JSON
-          const errorJson = await res.json();
-          errorText = errorJson.error || `Server error: ${res.status}`;
-        } else {
-          // Otherwise get text (could be HTML error page)
-          errorText = await res.text();
-          // If it looks like HTML, provide a clearer error message
-          if (errorText.includes('<!DOCTYPE') || errorText.includes('<html')) {
-            errorText = `Server error: ${res.status}. The API returned HTML instead of JSON.`;
-          }
-        }
-        
-        throw new Error(errorText);
-      }
-      
-      // Safe to parse as JSON if we got here
-      try {
-        const responseData = await res.json();
-        return responseData.response;
-      } catch (parseError) {
-        throw new Error(`Failed to parse Gemini response: ${parseError.message}`);
-      }
-    } catch (error: any) {
-      console.error('Gemini API error:', error);
-      // Return a user-friendly error message
-      throw new Error(`Failed to get response from Gemini: ${error.message || 'Unknown error'}`);
-    }
-  };
-
-  // Send a message to the bot
   const sendMessage = async () => {
     if (!input.trim()) return;
-    
+
     setLoadingResponse(true);
     const userMessage = { sender: 'user', text: input };
     let currentConvoId = selectedConversation;
     const isNewConversation = !currentConvoId;
     const messageText = input; // Store for naming later
-    
+
     // Create new conversation ID if needed
     if (isNewConversation) {
       currentConvoId = `chat-${Date.now()}`;
-      
+
       // Generate optimistic name immediately using the user's first message
       const optimisticName = generateOptimisticName(messageText);
-      
+
       // Update conversation history and names
       const updatedHistory = [currentConvoId, ...conversationHistory];
       const updatedNames = { ...conversationNames, [currentConvoId]: optimisticName };
-      
+
       // Update state and localStorage
       setConversationHistory(updatedHistory);
       setConversationNames(updatedNames);
       localStorage.setItem('conversationHistory', JSON.stringify(updatedHistory));
       localStorage.setItem('conversationNames', JSON.stringify(updatedNames));
-      
+
       // Set as selected conversation and remember first message for later AI naming
       setSelectedConversation(currentConvoId);
       setNewConversationFirstMessage(messageText);
     }
-    
+
     try {
       // Update messages with user input (optimistically)
       const updatedMessages = [...messages, userMessage];
       setMessages(updatedMessages);
       setInput('');
-      
+
       // Save to localStorage immediately
       localStorage.setItem(`messages_${currentConvoId}`, JSON.stringify(updatedMessages));
-      
+
       // Update summary immediately after user message
       updateSummary(currentConvoId!, updatedMessages);
-      
+
       let botText: string;
-      
+
       // Check if this is a ChatMate query
       if (isChatMateQuery(messageText)) {
-        // Get response from Gemini instead of regular completion API
+        // Get response from Genkit flow instead of regular completion API
         try {
-          botText = await sendToGemini(messageText, summary);
-        } catch (geminiError) {
-          console.error('Gemini request failed:', geminiError);
-          // Fallback to regular completion API
-          const res = await fetch(`/api/completion?stream=false`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              conversationId: currentConvoId,
-              messages: updatedMessages,
-            }),
+          const answer = await answerMessage({
+            message: messageText,
+            conversationHistory: updatedMessages.slice(-10), // Pass last 10 messages
           });
-          
-          if (!res.ok) throw new Error(await res.text());
-          const { result } = await res.json();
-          botText = result;
+          botText = answer?.response || 'No response from ChatMate.';
+        } catch (geminiError: any) {
+          console.error('Gemini request failed:', geminiError);
+          botText = 'Error getting response from ChatMate.';
         }
       } else {
         // Regular API Call for bot response
@@ -311,23 +228,23 @@ export default function Home() {
             messages: updatedMessages,
           }),
         });
-        
+
         if (!res.ok) throw new Error(await res.text());
         const { result } = await res.json();
         botText = result;
       }
-      
+
       // Add bot message
       const botMessage = { sender: 'bot', text: botText };
       const finalMessages = [...updatedMessages, botMessage];
       setMessages(finalMessages);
-      
+
       // Save updated messages with bot response
       localStorage.setItem(`messages_${currentConvoId}`, JSON.stringify(finalMessages));
-      
+
       // Update summary again after bot response
       updateSummary(currentConvoId!, finalMessages);
-      
+
       // If this was a new conversation, start AI naming process in the background
       if (isNewConversation && messageText) {
         try {
@@ -335,7 +252,7 @@ export default function Home() {
           nameConversation({ firstMessage: messageText }).then((result) => {
             if (result?.conversationName) {
               const aiName = result.conversationName;
-              
+
               // Update the name if the AI provided something meaningful
               const updatedNames = { ...conversationNames, [currentConvoId!]: aiName };
               setConversationNames(updatedNames);
@@ -350,12 +267,12 @@ export default function Home() {
           // Already have optimistic name, so just log the error
         }
       }
-      
+
     } catch (err: any) {
       console.error('Message failed:', err);
-      toast({ 
-        title: 'Error', 
-        description: err.message || 'Failed to process message' 
+      toast({
+        title: 'Error',
+        description: err.message || 'Failed to process message'
       });
     } finally {
       setLoadingResponse(false);
@@ -387,7 +304,7 @@ export default function Home() {
       const messagesToSummarize = msgs.slice(-10);
       const result = await summarizeConversation({ messages: messagesToSummarize });
       const newSummary = result?.summary || 'No summary available.';
-      
+
       // Update state and storage
       setSummary(newSummary);
       localStorage.setItem(`summary_${conversationId}`, newSummary);
@@ -419,13 +336,13 @@ export default function Home() {
     // Remove from localStorage
     localStorage.removeItem(`messages_${conversationId}`);
     localStorage.removeItem(`summary_${conversationId}`);
-    
+
     // Update conversationNames
     const updatedNames = { ...conversationNames };
     delete updatedNames[conversationId];
     setConversationNames(updatedNames);
     localStorage.setItem('conversationNames', JSON.stringify(updatedNames));
-    
+
     // Update history
     const updatedHistory = conversationHistory.filter(id => id !== conversationId);
     setConversationHistory(updatedHistory);
@@ -470,12 +387,12 @@ export default function Home() {
 
     const newName = newConversationNameInput.trim();
     const oldName = conversationNames[conversationToRename];
-    
+
     // Update conversation name mapping
     const updatedNames = { ...conversationNames, [conversationToRename]: newName };
     setConversationNames(updatedNames);
     localStorage.setItem('conversationNames', JSON.stringify(updatedNames));
-    
+
     // Close dialog and reset state
     setIsRenameDialogOpen(false);
     setConversationToRename(null);
@@ -557,6 +474,14 @@ export default function Home() {
                               }}
                             >
                               Delete
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                selectConversation(conversationId);
+                              }}
+                            >
+                              Reload
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
