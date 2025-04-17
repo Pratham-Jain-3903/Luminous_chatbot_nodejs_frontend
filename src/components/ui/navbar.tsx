@@ -21,8 +21,9 @@ import { Button } from "@/components/ui/button";
 import { useSidebar } from "@/components/ui/sidebar";
 import Image from 'next/image'; // Import Image component
 import { Icons } from "@/components/icons";
-
 import { cn } from "@/lib/utils"; // Import cn utility
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
 
 // Define props interface for Navbar
 interface NavbarProps {
@@ -43,7 +44,7 @@ export function Navbar({ className }: NavbarProps) { // Accept className prop
         {/* Logo and Brand */}
         <div className="flex-shrink-0 flex items-center">
           <Link href="/" className="flex items-center">
-            <Icons.shield className="mr-2 h-4 w-4 text-primary" />
+           <HelpCircle className="mr-2 h-4 w-4 text-primary" />
             <span className="text-xl font-semibold text-primary">
               Luminous ChatMate
             </span>
