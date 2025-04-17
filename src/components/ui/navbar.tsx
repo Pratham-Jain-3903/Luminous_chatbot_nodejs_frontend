@@ -19,9 +19,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { useSidebar } from "@/components/ui/sidebar";
-import Image from 'next/image'; // Import Image component
+import Image from 'next/image';
 import { Icons } from "@/components/icons";
-import { cn } from "@/lib/utils"; // Import cn utility
+import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 
@@ -39,13 +39,16 @@ export function Navbar({ className }: NavbarProps) { // Accept className prop
   };
 
   return (
-    <nav className={cn("bg-background border-b sticky top-0 z-50 h-14", className)}> {/* Use cn utility and set height to h-14 */}
-      <div className="max-w-7xl mx-auto px-2 sm:px-3 lg:px-4 h-full flex items-center justify-between"> {/* Ensure content is vertically centered */}
+    <nav className={cn("bg-background border-b sticky top-0 z-50", className)}> {/* Use cn utility */}
+      <div className="max-w-7xl mx-auto px-2 sm:px-3 lg:px-4 flex items-center justify-between">
         {/* Logo and Brand */}
         <div className="flex-shrink-0 flex items-center">
           <Link href="/" className="flex items-center">
-           <HelpCircle className="mr-2 h-4 w-4 text-primary" />
-            <span className="text-xl font-semibold text-primary">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="mr-2 text-red-500">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
+              <text x="12" y="18" fontSize="14" fontWeight="bold" textAnchor="middle" fill="currentColor">24x7</text>
+            </svg>
+            <span className="text-xl font-semibold">
               Luminous ChatMate
             </span>
           </Link>
