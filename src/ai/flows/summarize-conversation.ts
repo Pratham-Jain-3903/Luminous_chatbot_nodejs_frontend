@@ -39,7 +39,7 @@ const prompt = ai.definePrompt({
           sender: z.string(),
           text: z.string(),
         })
-      ).max(10).describe('The last 10 messages of the conversation.'),
+      ).max(30).describe('The last 30 messages of the conversation.'),
     }),
   },
   output: {

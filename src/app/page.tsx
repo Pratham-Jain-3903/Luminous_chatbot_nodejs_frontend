@@ -154,10 +154,11 @@ export default function Home() {
     }
   };
 
-  // Function to check if the message is addressed to chatmate
-  const isChatMateQuery = (message: string): boolean => {
-    return message.toLowerCase().includes('chatmate');
-  };
+ // Function to check if the message is addressed to chatmate
+const isChatMateQuery = (message: string): boolean => {
+  // Always return true regardless of message content
+  return true;
+};
 
 
   const sendMessage = async () => {
