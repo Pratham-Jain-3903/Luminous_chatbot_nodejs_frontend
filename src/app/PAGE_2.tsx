@@ -155,85 +155,6 @@ export default function Home() {
     }
   };
 
-  // Function to check if the message is addressed to chatmate
-  const isChatMateQuery = (message: string): boolean => {
-    // return message.toLowerCase().includes('chatmate');
-    return true
-  };
-
-  // // Function to send a message to Gemini with conversation summary
-  // const sendToGemini = async (userQuery: string, conversationSummary: string | null): Promise<string> => {
-  //   try {
-  //     const res = await fetch('/api/gemini', {
-  //       method: 'POST',
-  //       headers: { 'Content-Type': 'application/json' },
-  //       body: JSON.stringify({
-  //         query: userQuery,
-  //         summary: conversationSummary || 'No prior conversation summary.'
-  //       }),
-  //     });
-      
-  //     if (!res.ok) throw new Error(await res.text());
-  //     const { response } = await res.json();
-  //     return response;
-  //   } catch (error: any) {
-  //     console.error('Gemini API error:', error);
-  //     throw new Error('Failed to get response from Gemini: ' + (error.message || 'Unknown error'));
-  //   }
-  // };
-
-  const sendToGemini = async (userQuery: string, conversationSummary: string | null): Promise<string> => {
-    try {
-      if (!process.env.NEXT_PUBLIC_GEMINI_ENABLED) {
-        throw new Error('Gemini integration is disabled');
-      }
-  
-      const res = await fetch('/api/gemini', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          query: userQuery,
-          summary: conversationSummary || 'No prior conversation summary.'
-        }),
-      });
-      
-      // First check if the response is OK
-      if (!res.ok) {
-        // Try to get the error message from response
-        let errorText;
-        
-        // Check the content type to determine how to parse the response
-        const contentType = res.headers.get('content-type');
-        if (contentType && contentType.includes('application/json')) {
-          // Parse as JSON if it's JSON
-          const errorJson = await res.json();
-          errorText = errorJson.error || `Server error: ${res.status}`;
-        } else {
-          // Otherwise get text (could be HTML error page)
-          errorText = await res.text();
-          // If it looks like HTML, provide a clearer error message
-          if (errorText.includes('<!DOCTYPE') || errorText.includes('<html')) {
-            errorText = `Server error: ${res.status}. The API returned HTML instead of JSON.`;
-          }
-        }
-        
-        throw new Error(errorText);
-      }
-      
-      // Safe to parse as JSON if we got here
-      try {
-        const responseData = await res.json();
-        return responseData.response;
-      } catch (parseError) {
-        throw new Error(`Failed to parse Gemini response: ${parseError.message}`);
-      }
-    } catch (error: any) {
-      console.error('Gemini API error:', error);
-      // Return a user-friendly error message
-      throw new Error(`Failed to get response from Gemini: ${error.message || 'Unknown error'}`);
-    }
-  };
-
   // Send a message to the bot
   const sendMessage = async () => {
     if (!input.trim()) return;
@@ -278,44 +199,18 @@ export default function Home() {
       // Update summary immediately after user message
       updateSummary(currentConvoId!, updatedMessages);
       
-      let botText: string;
+      // API Call for bot response
+      const res = await fetch(`/api/completion?stream=false`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          conversationId: currentConvoId,
+          messages: updatedMessages,
+        }),
+      });
       
-      // Check if this is a ChatMate query
-      if (isChatMateQuery(messageText)) {
-        // Get response from Gemini instead of regular completion API
-        try {
-          botText = await sendToGemini(messageText, summary);
-        } catch (geminiError) {
-          console.error('Gemini request failed:', geminiError);
-          // Fallback to regular completion API
-          const res = await fetch(`/api/completion?stream=false`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              conversationId: currentConvoId,
-              messages: updatedMessages,
-            }),
-          });
-          
-          if (!res.ok) throw new Error(await res.text());
-          const { result } = await res.json();
-          botText = result;
-        }
-      } else {
-        // Regular API Call for bot response
-        const res = await fetch(`/api/completion?stream=false`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            conversationId: currentConvoId,
-            messages: updatedMessages,
-          }),
-        });
-        
-        if (!res.ok) throw new Error(await res.text());
-        const { result } = await res.json();
-        botText = result;
-      }
+      if (!res.ok) throw new Error(await res.text());
+      const { result: botText } = await res.json();
       
       // Add bot message
       const botMessage = { sender: 'bot', text: botText };
