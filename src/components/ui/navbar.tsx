@@ -20,6 +20,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useSidebar } from "@/components/ui/sidebar";
 import Image from 'next/image'; // Import Image component
+import { Icons } from "@/components/icons";
 
 import { cn } from "@/lib/utils"; // Import cn utility
 
@@ -42,13 +43,7 @@ export function Navbar({ className }: NavbarProps) { // Accept className prop
         {/* Logo and Brand */}
         <div className="flex-shrink-0 flex items-center">
           <Link href="/" className="flex items-center">
-            <Image
-              src="/luminous-logo.png" // Path to your Luminous logo
-              alt="Luminous ChatMate"
-              width={40} // Adjust size as needed
-              height={40} // Adjust size as needed
-              className="mr-2"
-            />
+            <Icons.shield className="mr-2 h-4 w-4 text-primary" />
             <span className="text-xl font-semibold text-primary">
               Luminous ChatMate
             </span>
